@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mukul — Wild Portfolio (Standalone)</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React + ReactDOM UMD -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel (for in-browser JSX transformation) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* custom styles from your component */
+    @keyframes gradient {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(50px, 50px); }
+    }
+
+    .glitch {
+      animation: glitch 0.3s infinite;
+    }
+
+    @keyframes glitch {
+      0%, 100% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+    }
+
+    /* hide native cursor */
+    body, html {
+      cursor: none;
+    }
+
+    /* make sure root fills page */
+    #root {
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body class="bg-black text-white antialiased">
+  <div id="root"></div>
+
+  <script type="text/babel">
+
+    const { useState, useEffect, useRef } = React;
+
+    /* ---------- Minimal inline SVG icon components ---------- */
+    const Svg = ({ children, className = "w-6 h-6" }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        {children}
+      </svg>
+    );
+
+    const Github = (props) => (
+      <Svg {...props}><path d="M12 .5a12 12 0 00-3.8 23.4c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.6-4-1.6-.5-1.2-1.2-1.6-1.2-1.6-1-.7.1-.7.1-.7 1.1.1 1.7 1.1 1.7 1.1 1 .1 1.6-.8 1.6-.8.8-1.5 2.1-1.1 2.6-.8.1-.7.4-1.1.8-1.4-2.7-.3-5.6-1.4-5.6-6.2 0-1.4.5-2.5 1.2-3.4-.1-.3-.5-1.6.1-3.3 0 0 1-.3 3.4 1.2a11.7 11.7 0 016.2 0c2.4-1.6 3.4-1.2 3.4-1.2.6 1.7.2 3 .1 3.3.8.9 1.2 2 1.2 3.4 0 4.8-2.9 5.9-5.6 6.2.4.4.8 1 .8 2v3c0 .3.2.6.8.5A12 12 0 0012 .5z" /></Svg>
+    );
+
+    const Linkedin = (props) => (
+      <Svg {...props}>
+        <rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect>
+        <path d="M7 11v5"></path>
+        <path d="M7 8v.01"></path>
+        <path d="M11 11v5"></path>
+        <path d="M11 6v5"></path>
+        <path d="M16 11v5"></path>
+      </Svg>
+    );
+
+    const Mail = (props) => (
+      <Svg {...props}>
+        <path d="M3 8.5v7a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+        <path d="M21 8l-9 6-9-6"></path>
+      </Svg>
+    );
+
+    const Phone = (props) => (
+      <Svg {...props}>
+        <path d="M22 16.92V21a2 2 0 01-2.18 2 19.86 19.86 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.86 19.86 0 013 4.18 2 2 0 015 2h4.09a2 2 0 012 1.72c.12 1.05.44 2.07.94 3.02a2 2 0 01-.45 2.11L10.7 10.7a16 16 0 006.6 6.6l1.85-1.85a2 2 0 012.11-.45c.95.5 1.97.82 3.02.94a2 2 0 011.72 2z"></path>
+      </Svg>
+    );
+
+    const Code = (props) => (
+      <Svg {...props}>
+        <path d="M16 18l6-6-6-6"></path>
+        <path d="M8 6L2 12l6 6"></path>
+      </Svg>
+    );
+
+    const Rocket = (props) => (
+      <Svg {...props}>
+        <path d="M20 9c0 5-8 11-8 11S4 14 4 9a8 8 0 0116 0z"></path>
+        <path d="M9 7l6-6"></path>
+      </Svg>
+    );
+
+    const Award = (props) => (
+      <Svg {...props}>
+        <circle cx="12" cy="8" r="7"></circle>
+        <path d="M8 21l4-3 4 3"></path>
+      </Svg>
+    );
+
+    const Briefcase = (props) => (
+      <Svg {...props}>
+        <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+        <path d="M16 3h-8v4h8z"></path>
+      </Svg>
+    );
+
+    /* ---------- Main component (converted to vanilla React JSX) ---------- */
+    function WildPortfolio() {
+      const [glitchActive, setGlitchActive] = useState(false);
+      const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+      const [terminalText, setTerminalText] = useState('');
+      const [cursorTrail, setCursorTrail] = useState([]);
+      const [isClicking, setIsClicking] = useState(false);
+      const containerRef = useRef(null);
+
+      useEffect(() => {
+        const handleMouseMove = (e) => {
+          setMousePos({ x: e.clientX, y: e.clientY });
+          setCursorTrail(prev => {
+            const newTrail = [...prev, { x: e.clientX, y: e.clientY, id: Date.now() }];
+            return newTrail.slice(-15);
+          });
+        };
+
+        const handleMouseDown = () => setIsClicking(true);
+        const handleMouseUp = () => setIsClicking(false);
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+          window.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('mousedown', handleMouseDown);
+          window.removeEventListener('mouseup', handleMouseUp);
+        };
+      }, []);
+
+      useEffect(() => {
+        const interval = setInterval(() => {
+          setGlitchActive(true);
+          setTimeout(() => setGlitchActive(false), 200);
+        }, 5000);
+        return () => clearInterval(interval);
+      }, []);
+
+      useEffect(() => {
+        const text = "mukul@dev:~$ initializing_portfolio...";
+        let i = 0;
+        const typing = setInterval(() => {
+          if (i < text.length) {
+            setTerminalText(text.slice(0, i + 1));
+            i++;
+          } else {
+            clearInterval(typing);
+          }
+        }, 50);
+        return () => clearInterval(typing);
+      }, []);
+
+      const projects = [
+        {
+          title: "AI Train Scheduler",
+          subtitle: "Smart India Hackathon - Selected for National Round",
+          tech: ["Python", "React", "FastAPI", "OR-Tools"],
+          color: "from-purple-500 to-pink-500",
+          desc: "Real-time settlement engine with minimal-transaction optimization",
+          icon: "🚄"
+        },
+        {
+          title: "TravelSplit",
+          subtitle: "Group Expense Management",
+          tech: ["React", "TypeScript", "Node.js", "PostgreSQL"],
+          color: "from-orange-500 to-red-500",
+          desc: "Minimal-transaction settlement with full-stack type safety & optimistic UI",
+          icon: "💸"
+        },
+        {
+          title: "Earth-Track",
+          subtitle: "Zero-DB Carbon Tracker",
+          tech: ["React", "TypeScript", "OpenAI"],
+          color: "from-green-500 to-teal-500",
+          desc: "Gamified carbon tracking with AI EcoTutor",
+          icon: "🌍"
+        },
+        {
+          title: "RBAC System",
+          subtitle: "Enterprise Security",
+          tech: ["NestJS", "MongoDB", "AWS"],
+          color: "from-blue-500 to-cyan-500",
+          desc: "Production-grade auth with MFA & OAuth2",
+          icon: "🔐"
+        }
+      ];
+
+      const skills = {
+        "Languages": ["Python", "TypeScript", "JavaScript", "C++"],
+        "Frontend": ["React.js", "Next.js", "Tailwind", "D3.js"],
+        "Backend": ["Node.js", "NestJS", "FastAPI", "Express"],
+        "AI/ML": ["OpenAI", "LangChain", "Scikit-learn"],
+        "Database": ["PostgreSQL", "MongoDB", "Redis"],
+        "DevOps": ["Docker", "AWS EC2", "GitHub Actions"]
+      };
+
+      return (
+        <div ref={containerRef} className="min-h-screen bg-black text-white overflow-hidden relative">
+          {/* Animated Grid Background */}
+          <div className="fixed inset-0 opacity-20" style={{
+            backgroundImage: `
+              linear-gradient(rgba(124, 58, 237, 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(124, 58, 237, 0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
+            animation: 'gridMove 20s linear infinite'
+          }} />
+
+          {/* Custom Cursor Glow */}
+          <div
+            className="fixed w-96 h-96 pointer-events-none z-50 blur-3xl opacity-30"
+            style={{
+              background: 'radial-gradient(circle, rgba(124,58,237,0.8) 0%, transparent 70%)',
+              left: mousePos.x - 192,
+              top: mousePos.y - 192,
+              transition: 'all 0.1s ease'
+            }}
+          />
+
+          {/* Cursor Trail */}
+          {cursorTrail.map((pos, i) => (
+            <div
+              key={pos.id}
+              className="fixed pointer-events-none z-50"
+              style={{
+                left: pos.x,
+                top: pos.y,
+                width: 8 - (i * 0.5),
+                height: 8 - (i * 0.5),
+                background: `rgba(124, 58, 237, ${1 - (i / 15)})`,
+                borderRadius: '50%',
+                transform: 'translate(-50%, -50%)',
+                transition: 'all 0.1s ease'
+              }}
+            />
+          ))}
+
+          {/* Main Cursor */}
+          <div
+            className={`fixed pointer-events-none z-50 transition-all duration-200 ${isClicking ? 'scale-75' : 'scale-100'}`}
+            style={{
+              left: mousePos.x,
+              top: mousePos.y,
+              transform: 'translate(-50%, -50%)'
+            }}
+          >
+            <div className="relative">
+              <div className="absolute inset-0 w-8 h-8 border-2 border-purple-500 rounded-full animate-ping opacity-75" />
+              <div className="w-8 h-8 border-2 border-purple-400 rounded-full" />
+              <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
+            </div>
+          </div>
+
+          {/* Hero Section */}
+          <div className="relative min-h-screen flex items-center justify-center px-4">
+            <div className="text-center z-10">
+              {/* Terminal Style Name */}
+              <div className="mb-8 font-mono text-green-400 text-sm">
+                {terminalText}<span className="animate-pulse">_</span>
+              </div>
+
+              <h1 className={`text-7xl md:text-9xl font-black mb-6 ${glitchActive ? 'glitch' : ''}`}
+                style={{
+                  background: 'linear-gradient(45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundSize: '200% auto',
+                  animation: 'gradient 3s linear infinite'
+                }}>
+                MUKUL
+              </h1>
+
+              <div className="text-2xl md:text-4xl font-bold mb-4 text-gray-300">
+                <span className="text-purple-400">Full-Stack</span> Developer + <span className="text-cyan-400">AI</span> Builder
+              </div>
+
+              <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+                Crafting production-grade systems that actually ship. Not just code — engineered experiences.
+              </p>
+
+              {/* Floating Action Buttons */}
+              <div className="flex gap-4 justify-center mb-12">
+                {[
+                  { icon: Github, href: "https://github.com/Muk-a-Dev", label: "GitHub" },
+                  { icon: Linkedin, href: "https://linkedin.com/in/mukul-kumar-536079291", label: "LinkedIn" },
+                  { icon: Mail, href: "mailto:mukul.wok@gmail.com", label: "Email" }
+                ].map((social, i) => (
+                  <a key={i} href={social.href} target="_blank" rel="noreferrer"
+                    className="group relative p-4 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl 
+                              hover:scale-110 transform transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50">
+                    <social.icon className="w-6 h-6" />
+                    <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs opacity-0 
+                                  group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {social.label}
+                    </span>
+                  </a>
+                ))}
+              </div>
+
+              {/* Scroll Indicator */}
+              <div className="animate-bounce mt-12">
+                <div className="w-6 h-10 border-2 border-purple-500 rounded-full mx-auto flex justify-center">
+                  <div className="w-1 h-3 bg-purple-500 rounded-full mt-2 animate-pulse" />
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Orbs */}
+            {[...Array(5)].map((_, i) => (
+              <div key={i}
+                className="absolute rounded-full blur-3xl opacity-20 animate-pulse"
+                style={{
+                  width: Math.random() * 300 + 100,
+                  height: Math.random() * 300 + 100,
+                  background: `linear-gradient(45deg, ${['#667eea', '#764ba2', '#f093fb', '#4facfe', '#00f2fe'][i]}, transparent)`,
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${i * 0.5}s`,
+                  animationDuration: `${Math.random() * 10 + 5}s`
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Projects Section */}
+          <div className="relative py-32 px-4">
+            <h2 className="text-6xl font-black text-center mb-20 relative inline-block left-1/2 -translate-x-1/2">
+              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                PROJECTS
+              </span>
+              <div className="absolute -bottom-4 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full" />
+            </h2>
+
+            <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {projects.map((project, i) => (
+                <div key={i}
+                  className="group relative bg-gradient-to-br from-gray-900 to-black rounded-2xl p-8 
+                            border border-gray-800 hover:border-purple-500 transition-all duration-500
+                            hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/30"
+                  style={{ animationDelay: `${i * 0.2}s` }}>
+
+                  <div className="text-6xl mb-4 transform group-hover:scale-110 group-hover:rotate-12 transition-all">
+                    {project.icon}
+                  </div>
+
+                  <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                    {project.title}
+                  </h3>
+
+                  <p className="text-purple-400 text-sm font-semibold mb-4">{project.subtitle}</p>
+
+                  <p className="text-gray-400 mb-6 leading-relaxed">{project.desc}</p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {project.tech.map((tech, j) => (
+                      <span key={j}
+                        className={`px-3 py-1 text-xs font-mono rounded-full bg-gradient-to-r ${project.color} bg-opacity-20 text-white border border-current`}>
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl bg-gradient-to-r ${project.color} transition-opacity duration-500 -z-10`} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Skills Matrix */}
+          <div className="relative py-32 px-4 bg-gradient-to-b from-black via-purple-950/10 to-black">
+            <h2 className="text-6xl font-black text-center mb-20">
+              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                TECH STACK
+              </span>
+            </h2>
+
+            <div className="max-w-6xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Object.entries(skills).map(([category, items], i) => (
+                <div key={i}
+                  className="relative p-6 rounded-xl bg-gradient-to-br from-gray-900/50 to-black/50 
+                            border border-gray-800 hover:border-cyan-500 backdrop-blur-sm
+                            transform hover:scale-105 transition-all duration-300">
+
+                  <h3 className="text-xl font-bold mb-4 text-cyan-400 flex items-center gap-2">
+                    <Code className="w-5 h-5" />
+                    {category}
+                  </h3>
+
+                  <div className="flex flex-wrap gap-2">
+                    {items.map((skill, j) => (
+                      <span key={j}
+                        className="px-3 py-1 text-sm bg-gradient-to-r from-purple-600/20 to-blue-600/20 
+                                   rounded-lg border border-purple-500/30 text-gray-300 hover:text-white
+                                   hover:border-purple-500 transition-all cursor-default">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Achievements */}
+          <div className="relative py-32 px-4">
+            <h2 className="text-6xl font-black text-center mb-20">
+              <span className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
+                ACHIEVEMENTS
+              </span>
+            </h2>
+
+            <div className="max-w-4xl mx-auto space-y-6">
+              {[
+                { icon: Award, title: "Co-Head (Tech Team)", org: "Google Developers Group (GDG)", desc: "Leading tech initiatives and developer workshops" },
+                { icon: Briefcase, title: "DevOps Intern", org: "Ewhent Technologies", desc: "Enhanced online engagement and campaign outreach" },
+                { icon: Rocket, title: "Smart India Hackathon", org: "Finalist", desc: "AI-driven train scheduling system" }
+              ].map((ach, i) => (
+                <div key={i}
+                  className="group flex items-start gap-6 p-6 rounded-xl bg-gradient-to-r from-gray-900/50 to-black/50
+                            border border-gray-800 hover:border-yellow-500 transition-all duration-300
+                            hover:shadow-2xl hover:shadow-yellow-500/20">
+
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 
+                              group-hover:scale-110 transition-transform">
+                    <ach.icon className="w-8 h-8 text-white" />
+                  </div>
+
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-1">{ach.title}</h3>
+                    <p className="text-yellow-400 font-semibold mb-2">{ach.org}</p>
+                    <p className="text-gray-400">{ach.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Contact CTA */}
+          <div className="relative py-32 px-4">
+            <div className="max-w-4xl mx-auto text-center">
+              <h2 className="text-5xl md:text-7xl font-black mb-8">
+                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                  LET'S BUILD SOMETHING WILD
+                </span>
+              </h2>
+
+              <p className="text-xl text-gray-400 mb-12">
+                Always open to collaborations, opportunities, and cool projects
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="mailto:mukul.wok@gmail.com"
+                  className="group px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl
+                          font-bold text-lg hover:scale-110 transform transition-all duration-300
+                          hover:shadow-2xl hover:shadow-purple-500/50 flex items-center justify-center gap-2">
+                  <Mail className="w-5 h-5" />
+                  mukul.wok@gmail.com
+                </a>
+
+                <a href="tel:+916363288551"
+                  className="group px-8 py-4 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl
+                          font-bold text-lg hover:scale-110 transform transition-all duration-300
+                          border border-gray-700 hover:border-purple-500 flex items-center justify-center gap-2">
+                  <Phone className="w-5 h-5" />
+                  +91 6363288551
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="relative py-12 px-4 border-t border-gray-800">
+            <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-gray-500 font-mono text-sm">
+                ©️ 2025 Mukul Kumar. Engineered with React + Tailwind
+              </p>
+              <p className="text-gray-500 font-mono text-sm">
+                SRM University – AP | B.Tech CSE
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ---------- Render ---------- */
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<WildPortfolio />);
+
+  </script>
+</body>
+</html>
